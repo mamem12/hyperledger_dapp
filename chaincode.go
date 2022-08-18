@@ -24,6 +24,13 @@ type Metadata struct {
 	TotalSupply uint64 `json:"totalSupply"`
 }
 
+// TransferEvent is the Event
+type TransferEvent struct {
+	Sender    string `json:"sender"`
+	Recipient string `json:"recipient"`
+	Amount    int    `json:"amount"`
+}
+
 // Init is called when the chaincode is instantiated by the blockchain network.
 func (cc *Chaincode) Init(stub shim.ChaincodeStubInterface) sc.Response {
 	_, params := stub.GetFunctionAndParameters()
@@ -166,8 +173,93 @@ func (cc *Chaincode) balanceOf(stub shim.ChaincodeStubInterface, params []string
 	return shim.Success(amountBytes)
 }
 
+// transfer is invoke fcn that moves amount token
+// from the caller's address to recipient
+// params - caller's address, recipient's address, amount of token
 func (cc *Chaincode) transfer(stub shim.ChaincodeStubInterface, params []string) sc.Response {
-	return shim.Success([]byte("transfer call!!!!!"))
+
+	// check parameter
+	if len(params) != 3 {
+		shim.Error("transfer only 3 params")
+	}
+
+	callerAddress, recipientAddress, transferAmount := params[0], params[1], params[2]
+
+	transferAmountInt, err := strconv.Atoi(transferAmount)
+	if err != nil {
+		errMsg := fmt.Sprintf("transfer amount must be integer")
+		return shim.Error(errMsg)
+	}
+
+	if transferAmountInt <= 0 {
+		return shim.Error("transfer amount must be positive")
+	}
+
+	// get caller amount
+	callerAmount, err := stub.GetState(callerAddress)
+	if err != nil {
+		return shim.Error("failed to GetState Error" + err.Error())
+	}
+
+	callerAmountInt, err := strconv.Atoi(string(callerAmount))
+	if err != nil {
+		return shim.Error("caller amount must be integer")
+	}
+
+	// get recipient amount
+	recipientAmount, err := stub.GetState(recipientAddress)
+	if err != nil {
+		return shim.Error("failed to GetState Error" + err.Error())
+	}
+
+	if recipientAmount == nil {
+		recipientAmount = []byte("0")
+	}
+
+	recipientAmountInt, err := strconv.Atoi(string(recipientAmount))
+	if err != nil {
+		return shim.Error("recipient amount must be integer")
+	}
+
+	// calculate amount
+	callerResultAmount := callerAmountInt - transferAmountInt
+	recipientResultAmount := recipientAmountInt + transferAmountInt
+
+	// check calculate amount is positive
+	if callerResultAmount < 0 {
+		return shim.Error("caller's balance is not sufficient")
+	}
+
+	// save the caller & recipient amount
+	err = stub.PutState(callerAddress, []byte(strconv.Itoa(callerResultAmount)))
+	if err != nil {
+		return shim.Error("failed to PutState of caller")
+	}
+	err = stub.PutState(recipientAddress, []byte(strconv.Itoa(recipientResultAmount)))
+	if err != nil {
+		return shim.Error("failed to PutState of recipient")
+	}
+
+	// emit transfer event
+	transferEvent := TransferEvent{
+		Sender:    callerAddress,
+		Recipient: recipientAddress,
+		Amount:    transferAmountInt,
+	}
+
+	transferEventBytes, err := json.Marshal(transferEvent)
+	if err != nil {
+		return shim.Error("failed to marshal transferEvent, error :" + err.Error())
+	}
+
+	err = stub.SetEvent("transferEvent", transferEventBytes)
+	if err != nil {
+		return shim.Error("failed to SetEvent of transferEvent, error :" + err.Error())
+	}
+
+	fmt.Println(callerAddress + " send " + transferAmount + " to " + recipientAddress)
+
+	return shim.Success([]byte("transfer Success"))
 }
 
 func (cc *Chaincode) allowance(stub shim.ChaincodeStubInterface, params []string) sc.Response {
