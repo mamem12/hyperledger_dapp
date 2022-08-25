@@ -1,9 +1,11 @@
 package controller
 
+// atoi 메서드 util화 시키기
 import (
 	"encoding/json"
 	"fmt"
 	"hyperledger_dapp/model"
+	"hyperledger_dapp/util"
 	"strconv"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
@@ -22,13 +24,9 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 
 	callerAddress, recipientAddress, transferAmount := params[0], params[1], params[2]
 
-	transferAmountInt, err := strconv.Atoi(transferAmount)
+	transferAmountInt, err := util.ConverToPositive("transfer amount", transferAmount)
 	if err != nil {
-		return shim.Error("transfer amount must be integer")
-	}
-
-	if transferAmountInt <= 0 {
-		return shim.Error("transfer amount must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// get caller amount
@@ -58,8 +56,8 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 	}
 
 	// calculate amount
-	callerResultAmount := callerAmountInt - transferAmountInt
-	recipientResultAmount := recipientAmountInt + transferAmountInt
+	callerResultAmount := callerAmountInt - *transferAmountInt
+	recipientResultAmount := recipientAmountInt + *transferAmountInt
 
 	// check calculate amount is positive
 	if callerResultAmount < 0 {
@@ -77,8 +75,7 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 	}
 
 	// emit transfer event
-
-	transferEvent := model.NewTransferEvent(callerAddress, recipientAddress, transferAmountInt)
+	transferEvent := model.NewTransferEvent(callerAddress, recipientAddress, *transferAmountInt)
 
 	transferEventBytes, err := json.Marshal(transferEvent)
 	if err != nil {
@@ -108,14 +105,10 @@ func (cc *Controller) Approve(stub shim.ChaincodeStubInterface, params []string)
 	ownerAddress, spenderAddress, allowanceAmount := params[0], params[1], params[2]
 
 	// check amount is integer & positive
-	allowanceAmountInt, err := strconv.Atoi(allowanceAmount)
-
+	// allowanceAmountInt, err := strconv.Atoi(allowanceAmount)
+	allowanceAmountInt, err := util.ConverToPositive(" Amount int ", allowanceAmount)
 	if err != nil {
-		return shim.Error("Amount is must be Integer")
-	}
-
-	if allowanceAmountInt <= 0 {
-		return shim.Error("Amount is must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// create composite key for allowance - approval/{owner}/{spender}
@@ -132,7 +125,7 @@ func (cc *Controller) Approve(stub shim.ChaincodeStubInterface, params []string)
 
 	// emit approval event
 
-	approvalEvent := model.NewApproval(spenderAddress, ownerAddress, allowanceAmountInt)
+	approvalEvent := model.NewApproval(spenderAddress, ownerAddress, *allowanceAmountInt)
 	approvalBytes, err := json.Marshal(approvalEvent)
 	if err != nil {
 		return shim.Error("failed to Marshal for approvalEvent")
@@ -158,14 +151,9 @@ func (cc *Controller) TransferFrom(stub shim.ChaincodeStubInterface, params []st
 	ownerAddress, spenderAddress, recipientAddress, transferAmount := params[0], params[1], params[2], params[3]
 
 	// check amount is integer & positive
-	transferAmountInt, err := strconv.Atoi(transferAmount)
-
+	transferAmountInt, err := util.ConverToPositive(" Amount ", transferAmount)
 	if err != nil {
 		return shim.Error("Amount is must be Integer")
-	}
-
-	if transferAmountInt < 0 {
-		return shim.Error("Amount is must be positive")
 	}
 
 	// get allowance
@@ -188,7 +176,7 @@ func (cc *Controller) TransferFrom(stub shim.ChaincodeStubInterface, params []st
 	}
 
 	// decrease allowance amount
-	approveAmountInt := allowanceInt - transferAmountInt
+	approveAmountInt := allowanceInt - *transferAmountInt
 	approveAmount := strconv.Itoa(approveAmountInt)
 
 	// approve amount of tokens trasfered
@@ -210,15 +198,11 @@ func (cc *Controller) IncreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	ownerAddress, spenderAddress, increaseAmount := params[0], params[1], params[2]
+
 	// check amount is integer & positive
-
-	increaseAmountInt, err := strconv.Atoi(increaseAmount)
+	increaseAmountInt, err := util.ConverToPositive("Amount", increaseAmount)
 	if err != nil {
-		return shim.Error("amount must be integer")
-	}
-
-	if increaseAmountInt < 0 {
-		return shim.Error("amount must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// get allowance
@@ -228,13 +212,13 @@ func (cc *Controller) IncreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	// convert allowance response payload to allowance data
-	allowanceInt, err := strconv.Atoi(string(allowanceResponse.GetPayload()))
+	allowanceInt, err := util.ConverToPositive("allowance", string(allowanceResponse.GetPayload()))
 	if err != nil {
-		return shim.Error("allowance must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// increase allowance
-	resultAmountInt := allowanceInt + increaseAmountInt
+	resultAmountInt := *allowanceInt + *increaseAmountInt
 	resultAmount := strconv.Itoa(resultAmountInt)
 
 	// call approve
@@ -256,15 +240,12 @@ func (cc *Controller) DecreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	ownerAddress, spenderAddress, decreaseAmount := params[0], params[1], params[2]
+
 	// check amount is integer & positive
 
-	decreaseAmountInt, err := strconv.Atoi(decreaseAmount)
+	decreaseAmountInt, err := util.ConverToPositive("Amount", decreaseAmount)
 	if err != nil {
-		return shim.Error("amount must be integer")
-	}
-
-	if decreaseAmountInt < 0 {
-		return shim.Error("amount must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// get allowance
@@ -274,13 +255,13 @@ func (cc *Controller) DecreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	// convert allowance response payload to allowance data
-	allowanceInt, err := strconv.Atoi(string(allowanceResponse.GetPayload()))
+	allowanceInt, err := util.ConverToPositive("allowance", decreaseAmount)
 	if err != nil {
 		return shim.Error("allowance must be positive")
 	}
 
 	// decrease allowance
-	resultAmountInt := allowanceInt + decreaseAmountInt
+	resultAmountInt := *allowanceInt + *decreaseAmountInt
 	resultAmount := strconv.Itoa(resultAmountInt)
 
 	// call approve

@@ -4,6 +4,7 @@ import "fmt"
 
 const (
 	MarshalErrorType = "Marshal"
+	ConvertErrorType = "Convert"
 )
 
 type CustomError struct {
