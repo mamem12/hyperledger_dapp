@@ -3,8 +3,11 @@ package model
 import "fmt"
 
 const (
-	MarshalErrorType = "Marshal"
-	ConvertErrorType = "Convert"
+	MarshalErrorType   = "Marshal"
+	ConvertErrorType   = "Convert"
+	PutStateErrorType  = "PutState"
+	GetStateErrorType  = "GetState"
+	UnmarshalErrorType = "Unmarshal"
 )
 
 type CustomError struct {

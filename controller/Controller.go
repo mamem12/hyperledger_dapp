@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"encoding/json"
-	"hyperledger_dapp/model"
+	"hyperledger_dapp/repository"
 	"strconv"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
@@ -34,23 +33,15 @@ func (cc *Controller) Init(stub shim.ChaincodeStubInterface, params []string) sc
 		return shim.Error("tokenName or symbol or owner cannot be emtpy")
 	}
 
-	// make metadata
-	metadata := model.NewMetadata(tokenName, symbol, owner, uint(amountUint))
-	metadataBytes, err := json.Marshal(metadata)
+	err = repository.SaveMetadata(stub, tokenName, symbol, owner, uint(amountUint))
 	if err != nil {
-		return shim.Error("failed to Marshal, error: " + err.Error())
-	}
-
-	// save token meta data
-	err = stub.PutState(tokenName, metadataBytes)
-	if err != nil {
-		return shim.Error("failed to PutState, error: " + err.Error())
+		return shim.Error(err.Error())
 	}
 
 	// save owner balance
-	err = stub.PutState(owner, []byte(amount))
+	err = repository.SaveBalance(stub, owner, amount)
 	if err != nil {
-		return shim.Error("failed to PutState, error: " + err.Error())
+		return shim.Error(err.Error())
 	}
 
 	return shim.Success(nil)

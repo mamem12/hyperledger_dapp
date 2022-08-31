@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hyperledger_dapp/model"
+	"hyperledger_dapp/repository"
 	"strconv"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
@@ -22,23 +23,14 @@ func (cc *Controller) TotalSupply(stub shim.ChaincodeStubInterface, params []str
 
 	tokenName := params[0]
 
-	// get metadata
-	metadata := &model.Metadata{}
-
-	metadataBytes, err := stub.GetState(tokenName)
+	// get erc20 totalsupply
+	totalSupply, err := repository.GetERC20TotalSupply(stub, tokenName)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to getstate from TotalSupply, error : %s", err.Error())
-		return shim.Error(errMsg)
-	}
-
-	err = json.Unmarshal(metadataBytes, metadata)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to unmarshal from TotalSupply, error : %s", err.Error())
-		return shim.Error(errMsg)
+		return shim.Error(err.Error())
 	}
 
 	// convert metadata to bytes
-	totalsupplyBytes, err := json.Marshal(metadata.TotalSupply)
+	totalsupplyBytes, err := json.Marshal(totalSupply)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to marshal from TotalSupply, error : %s", err.Error())
 		return shim.Error(errMsg)

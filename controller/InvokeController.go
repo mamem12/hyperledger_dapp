@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hyperledger_dapp/model"
+	"hyperledger_dapp/repository"
 	"hyperledger_dapp/util"
 	"strconv"
 
@@ -30,34 +31,20 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 	}
 
 	// get caller amount
-	callerAmount, err := stub.GetState(callerAddress)
+	callerAmount, err := repository.GetBalance(stub, callerAddress, false)
 	if err != nil {
-		return shim.Error("failed to GetState Error" + err.Error())
-	}
-
-	callerAmountInt, err := strconv.Atoi(string(callerAmount))
-	if err != nil {
-		return shim.Error("caller amount must be integer")
+		return shim.Error(err.Error())
 	}
 
 	// get recipient amount
-	recipientAmount, err := stub.GetState(recipientAddress)
+	recipientAmount, err := repository.GetBalance(stub, callerAddress, false)
 	if err != nil {
-		return shim.Error("failed to GetState Error" + err.Error())
-	}
-
-	if recipientAmount == nil {
-		recipientAmount = []byte("0")
-	}
-
-	recipientAmountInt, err := strconv.Atoi(string(recipientAmount))
-	if err != nil {
-		return shim.Error("recipient amount must be integer")
+		return shim.Error(err.Error())
 	}
 
 	// calculate amount
-	callerResultAmount := callerAmountInt - *transferAmountInt
-	recipientResultAmount := recipientAmountInt + *transferAmountInt
+	callerResultAmount := *callerAmount - *transferAmountInt
+	recipientResultAmount := *recipientAmount + *transferAmountInt
 
 	// check calculate amount is positive
 	if callerResultAmount < 0 {
@@ -65,13 +52,14 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 	}
 
 	// save the caller & recipient amount
-	err = stub.PutState(callerAddress, []byte(strconv.Itoa(callerResultAmount)))
+	err = repository.SaveBalance(stub, callerAddress, strconv.Itoa(callerResultAmount))
 	if err != nil {
-		return shim.Error("failed to PutState of caller")
+		return shim.Error(err.Error())
 	}
-	err = stub.PutState(recipientAddress, []byte(strconv.Itoa(recipientResultAmount)))
+
+	err = repository.SaveBalance(stub, callerAddress, strconv.Itoa(recipientResultAmount))
 	if err != nil {
-		return shim.Error("failed to PutState of recipient")
+		return shim.Error(err.Error())
 	}
 
 	// emit transfer event
