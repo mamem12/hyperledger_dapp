@@ -24,8 +24,7 @@ func (cc *Controller) Transfer(stub shim.ChaincodeStubInterface, params []string
 	}
 
 	callerAddress, recipientAddress, transferAmount := params[0], params[1], params[2]
-
-	transferAmountInt, err := util.ConverToPositive("transfer amount", transferAmount)
+	transferAmountInt, err := util.ConvertToPositive("transfer amount", transferAmount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -94,7 +93,7 @@ func (cc *Controller) Approve(stub shim.ChaincodeStubInterface, params []string)
 
 	// check amount is integer & positive
 	// allowanceAmountInt, err := strconv.Atoi(allowanceAmount)
-	allowanceAmountInt, err := util.ConverToPositive(" Amount int ", allowanceAmount)
+	allowanceAmountInt, err := util.ConvertToPositive(" Amount int ", allowanceAmount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -139,9 +138,9 @@ func (cc *Controller) TransferFrom(stub shim.ChaincodeStubInterface, params []st
 	ownerAddress, spenderAddress, recipientAddress, transferAmount := params[0], params[1], params[2], params[3]
 
 	// check amount is integer & positive
-	transferAmountInt, err := util.ConverToPositive(" Amount ", transferAmount)
+	transferAmountInt, err := util.ConvertToPositive(" Amount ", transferAmount)
 	if err != nil {
-		return shim.Error("Amount is must be Integer")
+		return shim.Error(err.Error())
 	}
 
 	// get allowance
@@ -152,9 +151,10 @@ func (cc *Controller) TransferFrom(stub shim.ChaincodeStubInterface, params []st
 	}
 
 	// convert allowance response payload to allowance data
-	allowanceInt, err := strconv.Atoi(string(allowanceResponse.GetPayload()))
+
+	allowanceInt, err := util.ConvertToPositive("Payload", string(allowanceResponse.GetPayload()))
 	if err != nil {
-		return shim.Error("allowance must be positive")
+		return shim.Error(err.Error())
 	}
 
 	// transfer from owner to recipient
@@ -164,7 +164,7 @@ func (cc *Controller) TransferFrom(stub shim.ChaincodeStubInterface, params []st
 	}
 
 	// decrease allowance amount
-	approveAmountInt := allowanceInt - *transferAmountInt
+	approveAmountInt := *allowanceInt - *transferAmountInt
 	approveAmount := strconv.Itoa(approveAmountInt)
 
 	// approve amount of tokens trasfered
@@ -188,7 +188,7 @@ func (cc *Controller) IncreaseAllowance(stub shim.ChaincodeStubInterface, params
 	ownerAddress, spenderAddress, increaseAmount := params[0], params[1], params[2]
 
 	// check amount is integer & positive
-	increaseAmountInt, err := util.ConverToPositive("Amount", increaseAmount)
+	increaseAmountInt, err := util.ConvertToPositive("Amount", increaseAmount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -200,7 +200,7 @@ func (cc *Controller) IncreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	// convert allowance response payload to allowance data
-	allowanceInt, err := util.ConverToPositive("allowance", string(allowanceResponse.GetPayload()))
+	allowanceInt, err := util.ConvertToPositive("allowance", string(allowanceResponse.GetPayload()))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -231,7 +231,7 @@ func (cc *Controller) DecreaseAllowance(stub shim.ChaincodeStubInterface, params
 
 	// check amount is integer & positive
 
-	decreaseAmountInt, err := util.ConverToPositive("Amount", decreaseAmount)
+	decreaseAmountInt, err := util.ConvertToPositive("Amount", decreaseAmount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -243,7 +243,7 @@ func (cc *Controller) DecreaseAllowance(stub shim.ChaincodeStubInterface, params
 	}
 
 	// convert allowance response payload to allowance data
-	allowanceInt, err := util.ConverToPositive("allowance", decreaseAmount)
+	allowanceInt, err := util.ConvertToPositive("allowance", decreaseAmount)
 	if err != nil {
 		return shim.Error("allowance must be positive")
 	}
@@ -289,8 +289,16 @@ func (cc *Controller) TransferOtherToken(stub shim.ChaincodeStubInterface, param
 	return shim.Success([]byte("transfer other token success"))
 }
 
+// mint is invoke fnc that creates amount tokens and assign them to address, increasing the total supply
+// param - token name, recipient address, amount token
 func (cc *Controller) Mint(stub shim.ChaincodeStubInterface, params []string) sc.Response {
-	return shim.Success(nil)
+
+	// chk parameter
+	if len(params) != 3 {
+		return shim.Error("Mint only 3 params")
+	}
+
+	return shim.Success([]byte("mint success"))
 }
 
 func (cc *Controller) Burn(stub shim.ChaincodeStubInterface, params []string) sc.Response {

@@ -13,18 +13,18 @@ import (
 )
 
 // Chaincode is the definitaion of the chaincode structure
-type Chaincode struct {
+type ERC20Chaincode struct {
 	Controller *controller.Controller
 }
 
 // NewChaincode is construtor function for Chaincode
-func NewChaincode() *Chaincode {
+func NewChaincode() *ERC20Chaincode {
 	controller := controller.NewContoller()
-	return &Chaincode{Controller: controller}
+	return &ERC20Chaincode{Controller: controller}
 }
 
 // Init is called when the chaincode is instantiated by the blockchain network.
-func (cc *Chaincode) Init(stub shim.ChaincodeStubInterface) sc.Response {
+func (cc *ERC20Chaincode) Init(stub shim.ChaincodeStubInterface) sc.Response {
 	_, params := stub.GetFunctionAndParameters()
 	fmt.Println("Init called with params: ", params)
 
@@ -32,7 +32,7 @@ func (cc *Chaincode) Init(stub shim.ChaincodeStubInterface) sc.Response {
 }
 
 // Invoke is called as a result of an application request to run the chaincode.
-func (cc *Chaincode) Invoke(stub shim.ChaincodeStubInterface) sc.Response {
+func (cc *ERC20Chaincode) Invoke(stub shim.ChaincodeStubInterface) sc.Response {
 	fnc, params := stub.GetFunctionAndParameters()
 
 	switch fnc {

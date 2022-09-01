@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func ConverToPositive(name, value string) (*int, error) {
+func ConvertToPositive(name, value string) (*int, error) {
 	intValue, err := strconv.Atoi(value)
 
 	if err != nil {
