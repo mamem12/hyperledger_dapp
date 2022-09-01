@@ -33,7 +33,7 @@ func (cc *Controller) Init(stub shim.ChaincodeStubInterface, params []string) sc
 		return shim.Error("tokenName or symbol or owner cannot be emtpy")
 	}
 
-	err = repository.SaveMetadata(stub, tokenName, symbol, owner, uint(amountUint))
+	err = repository.SaveERC20Metadata(stub, tokenName, symbol, owner, uint(amountUint))
 	if err != nil {
 		return shim.Error(err.Error())
 	}

@@ -297,7 +297,46 @@ func (cc *Controller) Mint(stub shim.ChaincodeStubInterface, params []string) sc
 	if len(params) != 3 {
 		return shim.Error("Mint only 3 params")
 	}
+	tokenName, owner, mintAmount := params[0], params[1], params[2]
 
+	// amount must be positive
+	mintAmountInt, err := util.ConvertToPositive("mint amount", mintAmount)
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	// increase total supply
+	erc20Metadata, err := repository.GetERC20Metadata(stub, tokenName)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	resultTotalSupply := *erc20Metadata.GetTotalSupply() + uint64(*mintAmountInt)
+
+	err = repository.SaveERC20Metadata(stub, erc20Metadata.Name, erc20Metadata.Symbol, erc20Metadata.Owner, uint(resultTotalSupply))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	// increase owner balance
+	curBalance, err := repository.GetBalance(stub, owner, false)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	resultBalance := *curBalance + *mintAmountInt
+
+	err = repository.SaveBalance(stub, owner, strconv.Itoa(resultBalance))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	// emit transfer event
+	err = repository.EmitTransferEvent(stub, "admin", tokenName, *mintAmountInt)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	return shim.Success([]byte("mint success"))
 }
 

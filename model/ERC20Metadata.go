@@ -20,3 +20,15 @@ func NewERC20Metadata(name, symbol, owner string, totalSupply uint) *ERC20Metada
 func (erc20 *ERC20Metadata) GetTotalSupply() *uint64 {
 	return &erc20.TotalSupply
 }
+
+func (erc20 *ERC20Metadata) GetName() *string {
+	return &erc20.Name
+}
+
+func (erc20 *ERC20Metadata) GetSymbol() *string {
+	return &erc20.Symbol
+}
+
+func (erc20 *ERC20Metadata) GetOwner() *string {
+	return &erc20.Owner
+}

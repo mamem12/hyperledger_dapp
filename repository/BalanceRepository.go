@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 )
 
-func SaveMetadata(stub shim.ChaincodeStubInterface, tokenName, symbol, owner string, amountUint uint) error {
+func SaveERC20Metadata(stub shim.ChaincodeStubInterface, tokenName, symbol, owner string, amountUint uint) error {
 
 	// make metadata
 	metadata := model.NewERC20Metadata(tokenName, symbol, owner, uint(amountUint))
@@ -71,4 +71,21 @@ func GetBalance(stub shim.ChaincodeStubInterface, owner string, isZero bool) (*i
 	}
 
 	return &amount, nil
+}
+
+func GetERC20Metadata(stub shim.ChaincodeStubInterface, tokenName string) (*model.ERC20Metadata, error) {
+
+	metadata := &model.ERC20Metadata{}
+
+	metadataBytes, err := stub.GetState(tokenName)
+	if err != nil {
+		return nil, model.NewCustomError(model.GetStateErrorType, "balance", err.Error())
+	}
+
+	err = json.Unmarshal(metadataBytes, metadata)
+	if err != nil {
+		return nil, model.NewCustomError(model.UnmarshalErrorType, "unmarshal", err.Error())
+	}
+
+	return metadata, nil
 }

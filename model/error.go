@@ -8,6 +8,7 @@ const (
 	PutStateErrorType  = "PutState"
 	GetStateErrorType  = "GetState"
 	UnmarshalErrorType = "Unmarshal"
+	SetEventErrorType  = "Event"
 )
 
 type CustomError struct {

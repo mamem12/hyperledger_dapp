@@ -20,7 +20,7 @@ const (
 	txMint        = "txMint"
 )
 
-var function = []byte("Mint")
+var function = []byte("mint")
 
 func configuration() *shimtest.MockStub {
 	cc := NewChaincode()
@@ -56,10 +56,43 @@ func TestInit(t *testing.T) {
 
 func TestMint(t *testing.T) {
 	stub := configuration()
-	arguments := [][]byte{function, []byte(initTokenName), []byte(initOwner)}
+	const increasAmount = 100000
+	arguments := [][]byte{function, []byte(initTokenName), []byte(initOwner), []byte(strconv.Itoa(increasAmount))}
 	res := stub.MockInvoke(txMint, arguments)
-
-	if res.Status != shim.ERROR {
+	if res.Status != shim.OK {
 		t.FailNow()
 	}
+
+	// increase total supply
+	totalSupply, _ := repository.GetERC20TotalSupply(stub, initTokenName)
+	if *totalSupply != initAmount+increasAmount {
+		t.FailNow()
+	}
+
+	balance, err := repository.GetBalance(stub, initOwner, false)
+	if err != nil {
+		fmt.Println("fail to get balance")
+		t.FailNow()
+	}
+
+	if *balance != initAmount+increasAmount {
+		fmt.Println("not eqaul balance")
+		t.FailNow()
+	}
+
+	// emit transfer event
+	data := <-stub.ChaincodeEventsChannel
+	if data.GetEventName() == repository.TransferEventKey {
+		t.FailNow()
+	}
+
+	event := model.NewTransferEvent("admin", initTokenName, increasAmount)
+
+	eventBytes, _ := json.Marshal(event)
+
+	if string(data.Payload) != string(eventBytes) {
+		t.FailNow()
+	}
+
+	fmt.Println(string(res.Payload))
 }
